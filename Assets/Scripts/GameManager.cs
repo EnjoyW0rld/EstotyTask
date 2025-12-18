@@ -1,6 +1,7 @@
 using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
+using UnityEngine.Events;
 
 namespace BallThrowGame
 {
@@ -8,8 +9,14 @@ namespace BallThrowGame
     {
         [Header("Holes variables")]
         [SerializeField] private int _holePositionChangeCooldown;
-        public int HolePositionChangeCooldown { get;private set; }
-
+        private EasingController _easingController;
+        //Events
+        public UnityEvent<CompletionType> OnBallCompleted;
+        // Enums
+        public enum CompletionType { Bad, Neutral, Good }
+        //Singlton variables
+        public int HolePositionChangeCooldown => _holePositionChangeCooldown;
+        public EasingController EasingController => _easingController;
 
         private static GameManager _instance;
         public static GameManager Instance => _instance;
@@ -21,6 +28,16 @@ namespace BallThrowGame
                 return;
             }
             _instance = this;
+
+            _easingController = FindObjectOfType<EasingController>();
+        }
+        private void Start()
+        {
+            if (OnBallCompleted == null) OnBallCompleted = new UnityEvent<CompletionType>();
+        }
+        public void CallBallComplete(CompletionType pType)
+        {
+            OnBallCompleted?.Invoke(pType);
         }
     }
 }
