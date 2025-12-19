@@ -54,5 +54,5 @@ Material:
     - _ColorValue: 1
     m_Colors:
     - _NegativeColor: {r: 1, g: 0, b: 0, a: 0}
-    - _PositiveColor: {r: 0.12635836, g: 0.8207547, b: 0, a: 0}
+    - _PositiveColor: {r: 0, g: 0.015266973, b: 0.81960785, a: 0}
   m_BuildTextureStacks: []

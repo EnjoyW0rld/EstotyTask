@@ -2,33 +2,26 @@ using System;
 using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
+using UnityEngine.Rendering;
 
 namespace BallThrowGame
 {
     public class TubeInstance : MonoBehaviour
     {
         [SerializeField] private MeshRenderer _holeCircle;
+        [SerializeField] private ParticleSystem _particles;
         private MaterialPropertyBlock _propertyBlock;
         private bool _isBad;
-        private int _shaderId;
+        private int _colorParameterID;
         public bool IsBad => _isBad;
 
         private void Start()
         {
             _propertyBlock = new MaterialPropertyBlock();
-            _shaderId = Shader.PropertyToID("_ColorValue");
+            _colorParameterID = Shader.PropertyToID("_ColorValue");
             CallColorEasing(false);
         }
-        public void FlipHoleState()
-        {
-            Action<float> OnUpdate = (float v) =>
-            {
-                _propertyBlock.SetFloat(_shaderId, v);
-                _holeCircle.SetPropertyBlock(_propertyBlock);
-            };
-            GameManager.Instance.EasingController.StartEase(_isBad ? 1 : 0, _isBad ? 0 : 1, 1, OnUpdate);
-            _isBad = !_isBad;
-        }
+        
         public void RandomizeHoleState()
         {
             StartCoroutine(PrepareColorChange(2));
@@ -38,15 +31,14 @@ namespace BallThrowGame
             _isBad = UnityEngine.Random.Range(0, 2) == 1 ? false : true;
             if (!pAnimate)
             {
-                _propertyBlock.SetFloat(_shaderId, _isBad ? 0 : 1);
+                _propertyBlock.SetFloat(_colorParameterID, _isBad ? 0 : 1);
                 _holeCircle.SetPropertyBlock(_propertyBlock);
                 return;
             }
-            //if (_isBad == newState) return;
 
             Action<float> OnUpdate = (float v) =>
             {
-                _propertyBlock.SetFloat(_shaderId, v);
+                _propertyBlock.SetFloat(_colorParameterID, v);
                 _holeCircle.SetPropertyBlock(_propertyBlock);
             };
             GameManager.Instance.EasingController.StartEase(_isBad ? 0 : 1, pDefaultValue, .5f, OnUpdate);
@@ -54,18 +46,16 @@ namespace BallThrowGame
         private void CallColorEasing(bool pAnimate = true)
         {
             CallColorEasing(_isBad ? 0 : 1);
-            return;
-            bool newState = UnityEngine.Random.Range(0, 2) == 1 ? false : true;
-            //if (_isBad == newState) return;
-            _isBad = newState;
-            if (!pAnimate) return;
-            Action<float> OnUpdate = (float v) =>
-            {
-                _propertyBlock.SetFloat(_shaderId, v);
-                _holeCircle.SetPropertyBlock(_propertyBlock);
-            };
-            GameManager.Instance.EasingController.StartEase(_isBad ? 0 : 1, _isBad ? 1 : 0, 2, OnUpdate);
         }
+        public void FireParticles()
+        {
+            _particles.Play();
+        }
+        /// <summary>
+        /// Coroutine drawing blinking indication before actual color change
+        /// </summary>
+        /// <param name="pDelay">Blinking duration</param>
+        /// <returns></returns>
         private IEnumerator PrepareColorChange(float pDelay)
         {
             float timePassed = 0;
@@ -75,8 +65,7 @@ namespace BallThrowGame
             {
                 timePassed += Time.deltaTime;
                 val = (Mathf.Sin(timePassed * 6 + startVal) + 1) / 2;
-                Debug.Log(val);
-                _propertyBlock.SetFloat(_shaderId, val);
+                _propertyBlock.SetFloat(_colorParameterID, val);
                 _holeCircle.SetPropertyBlock(_propertyBlock);
                 yield return 0;
 

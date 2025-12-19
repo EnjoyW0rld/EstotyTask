@@ -5,25 +5,34 @@ using UnityEngine;
 
 namespace BallThrowGame
 {
+    //************************************************************************************
+    // Handles tube placement, position randomization and color change.
+    // Keeps track of the corresponding cooldowns
+    //************************************************************************************
     public class TubePlacer : MonoBehaviour
     {
         [SerializeField] private TubeInstance _tubePrefab;
         [SerializeField] private Rect _placingArea;
-        [SerializeField] private float _tubeRadius = 2;
-        [SerializeField] private float _fadeDuration = 1;
+        [SerializeField, Tooltip("Check context menu for set up")] 
+        private float _tubeRadius = 2;
         [Header("Cooldowns")]
-        [SerializeField] private float _positionChangeCooldown = 10;
+        [SerializeField, Tooltip("Cooldown before tube position randomization")]
+        private float _positionChangeCooldown = 10;
         [SerializeField] private float _stateChangeMinCooldown = 4;
         [SerializeField] private float _stateChangeMaxCooldown = 7;
-        private bool _canChangePosition;
+        [Header("Animations")]
+        [SerializeField] private float _fadeDuration = 1;
+        private bool _needChangePosition;
 
         private TubeInstance[] _instancedTubes;
         private int _laneCount;
 
         private Action _randomizeHolePosition;
         private Action _randomizeHoleState;
+
         private void Start()
         {
+            // Instantiating all tubes and setting up actions to call position/state change
             _laneCount = (int)((_placingArea.height / 2) / _tubeRadius);
             _instancedTubes = new TubeInstance[_laneCount];
             float ySide = _placingArea.position.y - _placingArea.height / 2;
@@ -32,12 +41,16 @@ namespace BallThrowGame
                 _instancedTubes[i] = Instantiate(_tubePrefab);
                 _instancedTubes[i].transform.position = new Vector3(0, 0, ySide + (_tubeRadius * 2) * i + _tubeRadius);
 
-                InitHolePositionAction(i);
+                InitHolePositionAction(i, i == 0);
                 InitHoleStateAction(i);
             }
+            GameManager.Instance.OnBallCompleted.AddListener((_) => TrySwitchTubePlaces());
+            // Start cooldown coroutines
+            StartCoroutine(DoPositionChangeCooldown());
             StartCoroutine(DoColorChangeCooldown());
-
+            CalculateNewHolePos();
         }
+        // Initializers
         private void InitHoleStateAction(int i)
         {
             _randomizeHoleState += () =>
@@ -45,7 +58,7 @@ namespace BallThrowGame
                 _instancedTubes[i].RandomizeHoleState();
             };
         }
-        private void InitHolePositionAction(int i)
+        private void InitHolePositionAction(int i, bool pCallHandlerFunctions = false)
         {
             _randomizeHolePosition += () =>
             {
@@ -58,16 +71,32 @@ namespace BallThrowGame
                 // On ease out finish we calculate new holes position and call holes ease in
                 Action OnComplete = () =>
                 {
-                    RefreshHolesPosition();
-                    GameManager.Instance.EasingController.StartEase(1, 0, _fadeDuration, (float v) =>
+                    if (pCallHandlerFunctions)
                     {
-                        _instancedTubes[num].transform.localScale = new Vector3(v, 1, v);
-                    });
+                        CalculateNewHolePos();
+                        GameManager.Instance.EasingController.StartEase(1, 0, _fadeDuration, (float v) =>
+                        {
+                            _instancedTubes[num].transform.localScale = new Vector3(v, 1, v);
+                        }, OnHolePositionsUpdated);
+                    }
+                    else
+                    {
+                        GameManager.Instance.EasingController.StartEase(1, 0, _fadeDuration, (float v) =>
+                        {
+                            _instancedTubes[num].transform.localScale = new Vector3(v, 1, v);
+                        });
+                    }
                 };
                 GameManager.Instance.EasingController.StartEase(0, 1, _fadeDuration, OnUpdate, OnComplete);
             };
         }
-        private void RefreshHolesPosition()
+        // Position change functions
+        private void OnHolePositionsUpdated()
+        {
+            GameManager.Instance.SetCanShootState(true);
+            StartCoroutine(DoPositionChangeCooldown());
+        }
+        private void CalculateNewHolePos()
         {
             float xSide = _placingArea.center.x - _placingArea.width / 2;
             float maxPlacingRange = _placingArea.width / 2 - _tubeRadius;
@@ -79,21 +108,32 @@ namespace BallThrowGame
             }
 
         }
+        private void TrySwitchTubePlaces()
+        {
+            if (_needChangePosition)
+            {
+                GameManager.Instance.SetCanShootState(false);
+                _randomizeHolePosition?.Invoke();
+                _needChangePosition = false;
+            }
+        }
+        private IEnumerator DoPositionChangeCooldown()
+        {
+            yield return new WaitForSeconds(_positionChangeCooldown + _fadeDuration * 2);
+            _needChangePosition = true;
+        }
+        // State change functions
         private void RandomizeHoleState()
         {
             _randomizeHoleState?.Invoke();
             StartCoroutine(DoColorChangeCooldown());
         }
-        private IEnumerator DoPositionChangeCooldown()
-        {
-            yield return new WaitForSeconds(_positionChangeCooldown);
-            _canChangePosition = true;
-        }
         private IEnumerator DoColorChangeCooldown()
         {
-            yield return new WaitForSeconds(UnityEngine.Random.Range(_stateChangeMinCooldown,_stateChangeMaxCooldown));
+            yield return new WaitForSeconds(UnityEngine.Random.Range(_stateChangeMinCooldown, _stateChangeMaxCooldown));
             RandomizeHoleState();
         }
+
         private void Update()
         {
             if (Input.GetKeyDown(KeyCode.U))
@@ -115,6 +155,7 @@ namespace BallThrowGame
                 }
             }
         }
+        // Editor functions to make radius set up easier
         #region FUNCTIONS_FOR_EDITOR
 #if UNITY_EDITOR
         private GameObject _tempObject;

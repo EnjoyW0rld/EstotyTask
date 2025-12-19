@@ -6,6 +6,10 @@ using UnityEngine;
 
 namespace BallThrowGame
 {
+    //*****************************************************************************************************
+    //  NOTE: Functionality is not implemented to the fullest due to being unnecesary in current assignment
+    //        In future versions to add more easing functions and enum to choose which to use
+    //*****************************************************************************************************
 
     public class EasingController : MonoBehaviour
     {
@@ -64,7 +68,6 @@ namespace BallThrowGame
                 }
                 else
                 {
-                    //float currValue = (progress);
                     float currValue = Mathf.Lerp(_defaultValue, _targetValue, EaseInCubic(progress));
                     OnUpdate.Invoke(currValue);
                     return false;
@@ -74,38 +77,6 @@ namespace BallThrowGame
             public static float EaseInCubic(float t)
             {
                 return t * t * t;
-            }
-            /// <summary>
-            /// Easing equation function for a sinusoidal (sin(t)) easing out: 
-            /// decelerating from zero velocity.
-            /// </summary>
-            /// <param name="t">Current time in seconds.</param>
-            /// <param name="b">Starting value.</param>
-            /// <param name="c">Final value.</param>
-            /// <param name="d">Duration of animation.</param>
-            /// <returns>The correct value.</returns>
-            public static float SineEaseOut(float t, float b, float c, float d)
-            {
-                return c * Mathf.Sin(t / d * (Mathf.PI / 2)) + b;
-            }
-            public static float SineEaseToCubic(float t)
-            {
-                return Mathf.Lerp((Mathf.Sin(t * 5) + 1) / 2, t, t);
-                if (t > .5f)
-                {
-                    return EaseInCubic(t);
-                }
-                else
-                {
-                    return (Mathf.Sin(t) + 1) / 2;
-                }
-            }
-
-            private float easeInOutCirc(float x)
-            {
-                return x < 0.5
-                  ? (1 - Mathf.Sqrt(1 - Mathf.Pow(2 * x, 2))) / 2
-                  : (Mathf.Sqrt(1 - Mathf.Pow(-2 * x + 2, 2)) + 1) / 2;
             }
         }
     }
