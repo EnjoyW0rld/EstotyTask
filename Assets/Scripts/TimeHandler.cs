@@ -21,11 +21,11 @@ namespace BallThrowGame
         private void Start()
         {
             _manager.OnBallCompleted.AddListener(OnBallCompleted);
-            RestartTimer();
+            _manager.OnGameStarted.AddListener(RestartTimer);
         }
         private void Update()
         {
-            if (_elapsed) return;
+            if (_elapsed || !_manager.IsStarted) return;
             if (_currentTime > 0)
             {
                 _currentTime -= Time.deltaTime;
@@ -38,7 +38,7 @@ namespace BallThrowGame
                 _elapsed = true;
             }
         }
-        public void RestartTimer()
+        private void RestartTimer()
         {
             _currentTime = _maxTime;
             _elapsed = false;

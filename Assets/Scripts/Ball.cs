@@ -1,6 +1,7 @@
 using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
+using UnityEngine.Events;
 
 namespace BallThrowGame
 {
@@ -15,12 +16,16 @@ namespace BallThrowGame
         [SerializeField] private string _holeEntranceTag;
         [SerializeField] private string _holeExitTag;
         [SerializeField] private LayerMask _groundLayer;
+        [SerializeField, Tooltip("Amount of velocity to consider impact strong enough to play sound")]
+        private float _velocityThreshold;
+        public UnityEvent OnHit;
 
         private GameManager manager => GameManager.Instance;
         private Rigidbody _rb;
         private void Start()
         {
             _rb = GetComponent<Rigidbody>();
+            if(OnHit == null) OnHit = new UnityEvent();
         }
         private void Update()
         {
@@ -49,6 +54,10 @@ namespace BallThrowGame
                 _rb.excludeLayers &= ~_groundLayer;
             }
 
+        }
+        private void OnCollisionEnter(Collision collision)
+        {
+            if (_rb.velocity.magnitude > _velocityThreshold) OnHit?.Invoke();
         }
     }
 }

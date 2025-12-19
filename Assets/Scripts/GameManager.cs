@@ -21,10 +21,13 @@ namespace BallThrowGame
         [SerializeField, Tooltip("Position after which the ball will be respawned")] private float _yDeathZone;
         private EasingController _easingController;
         private bool _canShoot;
+        private bool _isStarted;
         //Events
         [Header("Events")]
         public UnityEvent<CompletionType> OnBallCompleted;
         public UnityEvent OnBallShot;
+        public UnityEvent OnTimerElapsed;
+        public UnityEvent OnGameStarted;
         // Enums
         public enum CompletionType { Bad, Neutral, Good }
 
@@ -35,6 +38,7 @@ namespace BallThrowGame
         public bool CanShoot => _canShoot;
         public int GoodHoleTimeAdd => _goodHoleTimeAdd;
         public int BadHoleTimeSub => _badHoleTimeSub;
+        public bool IsStarted => _isStarted;
 
         //Singlton variables
         private static GameManager _instance;
@@ -55,8 +59,14 @@ namespace BallThrowGame
         {
             if (OnBallCompleted == null) OnBallCompleted = new UnityEvent<CompletionType>();
             if (OnBallShot == null) OnBallShot = new UnityEvent();
+            if (OnTimerElapsed == null) OnTimerElapsed = new UnityEvent();
         }
 
+        public void RestartGame()
+        {
+            OnGameStarted?.Invoke();
+            _isStarted = true;
+        }
         /// <summary>
         /// Call when ball fell into one of the holes or out of the map,
         /// "completed" its journey
@@ -88,7 +98,8 @@ namespace BallThrowGame
         }
         public void OnTimerEnded()
         {
-
+            OnTimerElapsed?.Invoke();
+            _isStarted = false;
         }
     }
 }

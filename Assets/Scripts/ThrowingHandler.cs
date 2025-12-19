@@ -25,7 +25,7 @@ namespace BallThrowGame
         }
         private void Update()
         {
-            if (!_manager.CanShoot) return;
+            if (!_manager.CanShoot || !_manager.IsStarted) return;
 #if UNITY_ANDROID && !UNITY_EDITOR
             PhoneShootControlls();
 #else

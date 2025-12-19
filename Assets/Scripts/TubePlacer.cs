@@ -45,10 +45,20 @@ namespace BallThrowGame
                 InitHoleStateAction(i);
             }
             GameManager.Instance.OnBallCompleted.AddListener((_) => TrySwitchTubePlaces());
+            GameManager.Instance.OnGameStarted.AddListener(InitiateTubePlacement);
+            GameManager.Instance.OnTimerElapsed.AddListener(StopTubePlacement);
+        }
+        private void InitiateTubePlacement()
+        {
             // Start cooldown coroutines
             StartCoroutine(DoPositionChangeCooldown());
             StartCoroutine(DoColorChangeCooldown());
             CalculateNewHolePos();
+        }
+        private void StopTubePlacement()
+        {
+            StopCoroutine(DoPositionChangeCooldown());
+            StopCoroutine(DoColorChangeCooldown());
         }
         // Initializers
         private void InitHoleStateAction(int i)
@@ -134,27 +144,6 @@ namespace BallThrowGame
             RandomizeHoleState();
         }
 
-        private void Update()
-        {
-            if (Input.GetKeyDown(KeyCode.U))
-            {
-                _randomizeHolePosition?.Invoke();
-            }
-
-            if (Input.GetKeyDown(KeyCode.K))
-            {
-                EasingController c = FindObjectOfType<EasingController>();
-                for (int i = 0; i < _instancedTubes.Length; i++)
-                {
-                    int num = i;
-                    c.StartEase(0, 1, 2, (float v) =>
-                    {
-                        _instancedTubes[num].transform.localScale = new Vector3(v, 1, v);
-                        Debug.Log(v);
-                    });
-                }
-            }
-        }
         // Editor functions to make radius set up easier
         #region FUNCTIONS_FOR_EDITOR
 #if UNITY_EDITOR
